@@ -12,7 +12,7 @@ class Program
         var busConfig = new BusConfiguration();
         busConfig.UseTransport<MsmqTransport>();
         busConfig.UsePersistence<InMemoryPersistence>();
-
+        busConfig.PurgeOnStartup(true);
         var bus = Bus.Create(busConfig).Start();
         bus.Subscribe(typeof(MyEvent));
         Console.ReadLine();
