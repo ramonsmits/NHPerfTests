@@ -9,10 +9,12 @@ using NServiceBus.Persistence;
 
 class Program
 {
-    const int TotalMessages = 1000;
+    const int TotalMessages = 50000;
 
     static void Main(string[] args)
     {
+        double seconds, perSecond;
+
         var busConfig = new BusConfiguration();
         busConfig.UseTransport<MsmqTransport>();
         busConfig.UsePersistence<NHibernatePersistence>()
@@ -20,7 +22,6 @@ class Program
 
 
         var bus = Bus.Create(busConfig).Start();
-
         for (var i = 0; i < 100; i++)
         {
             bus.Publish(new MyEvent());
@@ -34,9 +35,35 @@ class Program
         }
 
         swatch.Stop();
-        var seconds = (double) swatch.ElapsedMilliseconds/1000;
-        var perSecond = TotalMessages/seconds;
-        Console.WriteLine($"Elapsed: {swatch.ElapsedMilliseconds}. {perSecond} msg/s");
+        seconds = swatch.Elapsed.TotalSeconds;
+        perSecond = TotalMessages / seconds;
+        Console.WriteLine($"for: {swatch.ElapsedMilliseconds}. {perSecond:N1} msg/s");
+
+        swatch.Restart();
+
+        Parallel.For(0, TotalMessages, i =>
+        {
+            bus.Publish(new MyEvent());
+        });
+
+        seconds = swatch.Elapsed.TotalSeconds;
+        perSecond = TotalMessages / seconds;
+        Console.WriteLine($"ParallelFor: {seconds:N}. {perSecond:N1} msg/s");
+
+        swatch.Restart();
+        var tasks = new List<Task>(TotalMessages);
+
+        for (var i = 0; i < TotalMessages; i++)
+        {
+            tasks.Add(Task.Run(() => { bus.Publish(new MyEvent()); }));
+        }
+
+        Task.WhenAll(tasks).ConfigureAwait(false).GetAwaiter().GetResult();
+
+        seconds = swatch.Elapsed.TotalSeconds;
+        perSecond = TotalMessages / seconds;
+        Console.WriteLine($"TaskWhenAll: {seconds:N}. {perSecond:N1} msg/s");
+
         Console.ReadLine();
     }
 }

@@ -9,11 +9,11 @@ using NServiceBus.Persistence;
 
 class Program
 {
-    const int TotalMessages = 1000;
+    const int TotalMessages = 50000;
 
     static void Main(string[] args)
     {
-        var config = new EndpointConfiguration("Publisher.V6");
+        var config = new EndpointConfiguration("Publisher.V5");
         config.UseTransport<MsmqTransport>();
         config.UsePersistence<NHibernatePersistence>()
             .ConnectionString(@"Data Source=.\SQLEXPRESS;Integrated Security=True;Database=PTest");
@@ -24,6 +24,7 @@ class Program
 
     static async Task Run(EndpointConfiguration config)
     {
+        double seconds, perSecond;
         var endpoint = await Endpoint.Start(config);
 
         for (var i = 0; i < 100; i++)
@@ -39,12 +40,41 @@ class Program
         }
 
         swatch.Stop();
-        var seconds = (double)swatch.ElapsedMilliseconds / 1000;
-        var perSecond = TotalMessages / seconds;
-        Console.WriteLine($"Elapsed: {swatch.ElapsedMilliseconds}. {perSecond} msg/s");
+        seconds = swatch.Elapsed.TotalSeconds;
+        perSecond = TotalMessages / seconds;
+        Console.WriteLine($"for: {seconds:N}. {perSecond:N1} msg/s");
+
+        swatch.Restart();
+
+        Parallel.For(0, TotalMessages, i =>
+        {
+            if (i % 1000 == 0) Console.Write("+");
+            endpoint.Publish(new MyEvent()).ConfigureAwait(false).GetAwaiter().GetResult();
+        });
+
+        seconds = swatch.Elapsed.TotalSeconds;
+        perSecond = TotalMessages / seconds;
+        Console.WriteLine($"ParallelFor: {seconds:N}. {perSecond:N1} msg/s");
+
+        swatch.Restart();
+        var tasks = new List<Task>(TotalMessages);
+
+        for (var i = 0; i < TotalMessages; i++)
+        {
+            tasks.Add(endpoint.Publish(new MyEvent()));
+        }
+
+        await Task.WhenAll(tasks);
+
+        seconds = swatch.Elapsed.TotalSeconds;
+        perSecond = TotalMessages / seconds;
+        Console.WriteLine($"TaskWhenAll: {seconds:N}. {perSecond:N1} msg/s");
+
+
         Console.ReadLine();
 
         await endpoint.Stop();
+
     }
 }
 
