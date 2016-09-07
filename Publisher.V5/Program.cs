@@ -9,7 +9,7 @@ using NServiceBus.Persistence;
 
 class Program
 {
-    const int TotalMessages = 50000;
+    const int TotalMessages = 5000;
 
     static void Main(string[] args)
     {
@@ -37,7 +37,7 @@ class Program
         swatch.Stop();
         seconds = swatch.Elapsed.TotalSeconds;
         perSecond = TotalMessages / seconds;
-        Console.WriteLine($"for: {swatch.ElapsedMilliseconds}. {perSecond:N1} msg/s");
+        Console.WriteLine($"for:         {seconds,6:N}s {perSecond,10:N1} msg/s");
 
         swatch.Restart();
 
@@ -48,7 +48,7 @@ class Program
 
         seconds = swatch.Elapsed.TotalSeconds;
         perSecond = TotalMessages / seconds;
-        Console.WriteLine($"ParallelFor: {seconds:N}. {perSecond:N1} msg/s");
+        Console.WriteLine($"ParallelFor: {seconds,6:N}s {perSecond,10:N1} msg/s");
 
         swatch.Restart();
         var tasks = new List<Task>(TotalMessages);
@@ -62,7 +62,7 @@ class Program
 
         seconds = swatch.Elapsed.TotalSeconds;
         perSecond = TotalMessages / seconds;
-        Console.WriteLine($"TaskWhenAll: {seconds:N}. {perSecond:N1} msg/s");
+        Console.WriteLine($"TaskWhenAll: {seconds,6:N}s {perSecond,10:N1} msg/s");
 
         Console.ReadLine();
     }

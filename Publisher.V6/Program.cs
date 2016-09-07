@@ -42,19 +42,18 @@ class Program
         swatch.Stop();
         seconds = swatch.Elapsed.TotalSeconds;
         perSecond = TotalMessages / seconds;
-        Console.WriteLine($"for: {seconds:N}. {perSecond:N1} msg/s");
+        Console.WriteLine($"for:         {seconds,6:N}s {perSecond,10:N1} msg/s");
 
         swatch.Restart();
 
         Parallel.For(0, TotalMessages, i =>
         {
-            if (i % 1000 == 0) Console.Write("+");
             endpoint.Publish(new MyEvent()).ConfigureAwait(false).GetAwaiter().GetResult();
         });
 
         seconds = swatch.Elapsed.TotalSeconds;
         perSecond = TotalMessages / seconds;
-        Console.WriteLine($"ParallelFor: {seconds:N}. {perSecond:N1} msg/s");
+        Console.WriteLine($"ParallelFor: {seconds,6:N}s {perSecond,10:N1} msg/s");
 
         swatch.Restart();
         var tasks = new List<Task>(TotalMessages);
@@ -68,7 +67,7 @@ class Program
 
         seconds = swatch.Elapsed.TotalSeconds;
         perSecond = TotalMessages / seconds;
-        Console.WriteLine($"TaskWhenAll: {seconds:N}. {perSecond:N1} msg/s");
+        Console.WriteLine($"TaskWhenAll: {seconds,6:N}s {perSecond,10:N1} msg/s");
 
 
         Console.ReadLine();
